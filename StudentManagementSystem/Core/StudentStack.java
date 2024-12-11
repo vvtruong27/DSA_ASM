@@ -3,7 +3,7 @@ package StudentManagementSystem.Core;
 import java.util.EmptyStackException;
 
 public class StudentStack {
-    private static final int DEFAULT_CAPACITY = 10;
+    private static final int DEFAULT_CAPACITY = 1000;
     private Student[] stack;
     private int top;
 

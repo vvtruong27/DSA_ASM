@@ -1,6 +1,7 @@
 package StudentManagementSystem.Core;
 
 import java.util.InputMismatchException;
+import java.util.Random;
 import java.util.Scanner;
 
 public class StudentManagement {
@@ -10,6 +11,21 @@ public class StudentManagement {
     public StudentManagement() {
         studentStack = new StudentStack(); // Initialize the student stack
         scanner = new Scanner(System.in); // Create a Scanner for user input
+        generateStudentData(studentStack, 1000); // Generate student data
+    }
+
+    // Method to generate student data
+    public static void generateStudentData(StudentStack studentStack, int numberOfStudents) {
+        Random random = new Random();
+
+        for (int i = 1; i <= numberOfStudents; i++) {
+            String id = "S" + String.format("%04d", i); // Generate student ID like S0001, S0002, ...
+            String name = "Student" + i; // Generate student name like Student1, Student2, ...
+            float marks = 1 + random.nextFloat() * 9; // Generate random marks between 1 and 10
+
+            Student student = new Student(id, name, marks); // Create a new student object
+            studentStack.push(student); // Push student to the stack
+        }
     }
 
     // Method to enter the number of students and their information
@@ -266,25 +282,131 @@ public class StudentManagement {
     private void sortStudentsByMarks() {
         try {
             System.out.println("--- Sorting Students by Marks ---");
-            StudentStack sortedStack = new StudentStack(); // Temporary stack to hold sorted students
 
-            // Sort students by marks
-            while (!studentStack.isEmpty()) {
-                Student current = studentStack.pop();
-                while (!sortedStack.isEmpty() && sortedStack.peek().getMarks() < current.getMarks()) {
-                    studentStack.push(sortedStack.pop());
-                }
-                sortedStack.push(current);
-            }
+            StudentStack bubbleStack = cloneStack(studentStack);
 
-            // Restore the sorted stack to the original stack
-            while (!sortedStack.isEmpty()) {
-                studentStack.push(sortedStack.pop());
-            }
+            // Measure Bubble Sort runtime
+            long bubbleStart = System.nanoTime();
+            bubbleSortStack(bubbleStack);
+            long bubbleEnd = System.nanoTime();
+            System.out.println("Bubble Sort completed. Time taken: " + (bubbleEnd - bubbleStart) + " ns");
 
-            System.out.println("Students sorted by marks.");
+            // Measure Merge Sort runtime
+            long mergeStart = System.nanoTime();
+            mergeSortStack();
+            long mergeEnd = System.nanoTime();
+            System.out.println("Merge Sort completed. Time taken: " + (mergeEnd - mergeStart) + " ns");
+
         } catch (Exception e) {
             System.out.println("An error occurred: " + e.getMessage());
         }
     }
+
+    // Method to clone a stack
+    private StudentStack cloneStack(StudentStack original) {
+        StudentStack tempStack = new StudentStack();
+        StudentStack clonedStack = new StudentStack();
+
+        // Transfer elements from original to tempStack (to reverse the order)
+        while (!original.isEmpty()) {
+            tempStack.push(original.pop());
+        }
+
+        // Transfer elements from tempStack to original and clonedStack (to maintain
+        // order)
+        while (!tempStack.isEmpty()) {
+            Student student = tempStack.pop();
+            original.push(student);
+            clonedStack.push(student);
+        }
+
+        return clonedStack;
+    }
+
+    // Bubble Sort for Stack
+    private void bubbleSortStack(StudentStack bubbleStack) {
+        StudentStack tempStack = new StudentStack();
+        int size = bubbleStack.size();
+
+        for (int i = 0; i < size - 1; i++) {
+            boolean swapped = false;
+            Student previous = bubbleStack.pop();
+
+            for (int j = 0; j < size - 1 - i; j++) {
+                Student current = bubbleStack.pop();
+
+                if (previous.getMarks() > current.getMarks()) {
+                    tempStack.push(previous);
+                    previous = current;
+                    swapped = true;
+                } else {
+                    tempStack.push(current);
+                }
+            }
+
+            tempStack.push(previous);
+            while (!tempStack.isEmpty()) {
+                bubbleStack.push(tempStack.pop());
+            }
+
+            if (!swapped)
+                break; // Optimization if no swaps occur
+        }
+    }
+
+    // Merge Sort for Stack
+    private void mergeSortStack() {
+        studentStack = mergeSortHelper(studentStack);
+    }
+
+    private StudentStack mergeSortHelper(StudentStack stack) {
+        if (stack.size() <= 1)
+            return stack;
+
+        // Split stack into two halves
+        StudentStack leftStack = new StudentStack();
+        StudentStack rightStack = new StudentStack();
+        int mid = stack.size() / 2;
+
+        for (int i = 0; i < mid; i++) {
+            leftStack.push(stack.pop());
+        }
+        while (!stack.isEmpty()) {
+            rightStack.push(stack.pop());
+        }
+
+        // Recursively sort both halves
+        leftStack = mergeSortHelper(leftStack);
+        rightStack = mergeSortHelper(rightStack);
+
+        // Merge the sorted halves
+        return mergeStacks(leftStack, rightStack);
+    }
+
+    private StudentStack mergeStacks(StudentStack leftStack, StudentStack rightStack) {
+        StudentStack resultStack = new StudentStack();
+        StudentStack tempStack = new StudentStack();
+
+        while (!leftStack.isEmpty() && !rightStack.isEmpty()) {
+            if (leftStack.peek().getMarks() <= rightStack.peek().getMarks()) {
+                tempStack.push(leftStack.pop());
+            } else {
+                tempStack.push(rightStack.pop());
+            }
+        }
+
+        while (!leftStack.isEmpty()) {
+            tempStack.push(leftStack.pop());
+        }
+        while (!rightStack.isEmpty()) {
+            tempStack.push(rightStack.pop());
+        }
+
+        while (!tempStack.isEmpty()) {
+            resultStack.push(tempStack.pop());
+        }
+
+        return resultStack;
+    }
+
 }
